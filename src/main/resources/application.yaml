@@ -22,6 +22,8 @@ spring:
       enabled: Always
   application:
     name: ead-authuser-service
+  rabbitmq:
+    addresses: 'url'
 
 logging:
   level:
