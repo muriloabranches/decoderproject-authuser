@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Calendar;
 import java.util.Date;
+import java.util.stream.Collectors;
 
 @Log4j2
 @Component
@@ -21,7 +22,7 @@ public class JwtProvider {
     private String jwtExpirationMs;
 
     public String generateJwt(Authentication authentication) {
-        UserDetails userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
         Date now = new Date();
 
@@ -29,15 +30,20 @@ public class JwtProvider {
         calendar.setTime(now);
         calendar.add(Calendar.MILLISECOND, Integer.valueOf(jwtExpirationMs));
 
+        final String roles = userDetails.getAuthorities().stream()
+                .map(role -> role.getAuthority())
+                .collect(Collectors.joining(","));
+
         return Jwts.builder()
-                .setSubject((userDetails.getUsername()))
+                .setSubject((userDetails.getUserId().toString()))
+                .claim("roles", roles)
                 .setIssuedAt(now)
                 .setExpiration(calendar.getTime())
                 .signWith(SignatureAlgorithm.HS512, jwtSecret)
                 .compact();
     }
 
-    public String getUsernameJwt(String token) {
+    public String getSubjectJwt(String token) {
         return Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(token).getBody().getSubject();
     }
 
